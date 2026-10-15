@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yummy Tummy</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load React, ReactDOM, and Babel for in-browser JSX compilation -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <!-- The root element where React will mount the app -->
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const INGREDIENT_CATEGORIES = {
+          "Spices": [
+            "Turmeric (Haldi)", "Cumin (Jeera)", "Coriander (Dhania)", 
+            "Red Chili Powder (Lal Mirch)", "Black Pepper (Kali Mirch)", 
+            "Green Cardamom (Elaichi)", "Black Cardamom (Badi Elaichi)", 
+            "Cinnamon (Dalchini)", "Cloves (Laung)", "Mustard Seeds (Rai / Sarson)", 
+            "Fenugreek Seeds (Methi)", "Asafoetida (Hing)", "Fennel Seeds (Saunf)", 
+            "Carom Seeds (Ajwain)", "Nigella Seeds (Kalonji)", "Indian Bay Leaf (Tej Patta)", 
+            "Curry Leaves (Kadi Patta)", "Dry Mango Powder (Amchur)", "Pomegranate Seeds (Anardana)", 
+            "Kokum", "Black Stone Flower (Kalpasi)", "Saffron (Kesar)", "Kasuri Methi", 
+            "Garam Masala", "Panch Phoron", "Chaat Masala", "Sambar / Rasam Powder"
+          ],
+          "Indian Flours": [
+            "Atta (Whole wheat)", "Maida (Refined white)", "Besan (Gram Flour)", 
+            "Ragi Flour", "Jowar Flour", "Bajra Flour", "Sooji / Rava (Semolina)", "Sabudana Flour"
+          ],
+          "Indian Dals": [
+            "Toor Dal / Arhar", "Moong Dal", "Chana Dal", "Urad Dal", 
+            "Masoor Dal", "Rajma", "Kabuli Chana"
+          ],
+          "Core Pantry": [
+            "Ghee", "Paneer", "Tamarind paste", "Jaggery"
+          ],
+          "Common Indian Vegetables": [
+            "Onions", "Potatoes", "Garlic", "Ginger", "Bitter gourd (Karela)", 
+            "Bottle gourd (Lauki)", "Ridge gourd (Tori)", "Tomatoes", "Okra (Bhindi)", 
+            "Eggplants (Baingan)", "Cauliflower (Gobi)", "Green peas", "Spinach (Palak)", 
+            "Fenugreek leaves (Methi)"
+          ]
+        };
+
+        const USERS = {
+          bedani: {
+            id: 'bedani',
+            name: 'Bedani Mom',
+            image: 'image_239859.jpg', 
+            theme: 'bg-blue-500',
+            lightTheme: 'bg-blue-50',
+            btnTheme: 'bg-blue-500 hover:bg-blue-400 shadow-blue-500/40',
+            accent: 'text-blue-600',
+            borderTheme: 'border-blue-400'
+          },
+          varanasi: {
+            id: 'varanasi',
+            name: 'Varanasi Mom',
+            image: 'image_2397fa.jpg', 
+            theme: 'bg-pink-500',
+            lightTheme: 'bg-pink-50',
+            btnTheme: 'bg-pink-500 hover:bg-pink-400 shadow-pink-500/40',
+            accent: 'text-pink-600',
+            borderTheme: 'border-pink-400'
+          }
+        };
+
+        const MAIN_IMAGE = 'image_239533.jpg'; 
+
+        const Icons = {
+          Plus: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"></path></svg>,
+          Mic: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>,
+          Stop: () => <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"></path></svg>,
+          Camera: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>,
+          Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
+          Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>,
+          Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+        };
+
+        const Toast = ({ message, onClose }) => {
+          if (!message) return null;
+          return (
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl z-50 animate-fade-in-up flex items-center gap-4 text-lg font-bold border-4 border-gray-700">
+              <span>{message}</span>
+              <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center">&times;</button>
+            </div>
+          );
+        };
+
+        const useSpeechRecognition = (onResult) => {
+          const [isRecording, setIsRecording] = useState(false);
+          const [error, setError] = useState(null);
+          const recognitionRef = useRef(null);
+
+          useEffect(() => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+              recognitionRef.current = new SpeechRecognition();
+              recognitionRef.current.continuous = true;
+              recognitionRef.current.interimResults = true;
+              recognitionRef.current.lang = 'en-IN'; 
+
+              recognitionRef.current.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                  if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                  } else {
+                    interimTranscript += event.results[i][0].transcript;
+                  }
+                }
+                onResult(finalTranscript, interimTranscript);
+              };
+
+              recognitionRef.current.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                // Ignore 'aborted' errors which happen naturally when we force stop the recording
+                if (event.error !== 'aborted') {
+                    setError("Microphone error. Please try typing instead.");
+                }
+                setIsRecording(false);
+              };
+
+              recognitionRef.current.onend = () => {
+                setIsRecording(false);
+              };
+            } else {
+              setError("Voice typing is not supported in this browser. Please type instead.");
+            }
+
+            // Cleanup when the component unmounts
+            return () => {
+              if (recognitionRef.current) {
+                try {
+                  recognitionRef.current.stop();
+                } catch(e) {}
+              }
+            };
+          }, [onResult]);
+
+          const toggleRecording = () => {
+            if (!recognitionRef.current) return;
+            
+            if (isRecording) {
+              // Stop recording
+              setIsRecording(false); 
+              try {
+                recognitionRef.current.abort(); // Force stop immediately
+              } catch (err) {
+                try {
+                   recognitionRef.current.stop();
+                } catch(e) {
+                   console.error("Error stopping mic:", e);
+                }
+              }
+            } else {
+              // Start recording
+              setError(null);
+              setIsRecording(true);
+              try {
+                recognitionRef.current.start();
+              } catch (err) {
+                console.error("Error starting mic:", err);
+                // If it fails to start (e.g. browser thought it was already listening), abort and restart
+                try {
+                    recognitionRef.current.abort();
+                    setTimeout(() => {
+                        try {
+                           recognitionRef.current.start();
+                        } catch(e) {
+                           setIsRecording(false);
+                        }
+                    }, 200);
+                } catch(e) {
+                    setIsRecording(false);
+                }
+              }
+            }
+          };
+
+          return { isRecording, toggleRecording, error };
+        };
+
+        const RecipeForm = ({ user, initialData, onSave, onCancel, showToast }) => {
+          const [title, setTitle] = useState(initialData?.title || '');
+          const [ingredients, setIngredients] = useState(initialData?.ingredients || []);
+          const [instructions, setInstructions] = useState(initialData?.instructions || '');
+          const [media, setMedia] = useState(initialData?.media || []);
+          
+          const [selectedCategory, setSelectedCategory] = useState(Object.keys(INGREDIENT_CATEGORIES)[0]);
+          const [selectedIngredient, setSelectedIngredient] = useState('');
+          const [customIngredient, setCustomIngredient] = useState('');
+          const [amount, setAmount] = useState('');
+          const [interimText, setInterimText] = useState('');
+
+          const handleSpeechResult = (final, interim) => {
+            if (final) {
+              setInstructions(prev => prev + (prev.length > 0 && !prev.endsWith(' ') ? ' ' : '') + final + ' ');
+              setInterimText('');
+            } else {
+              setInterimText(interim);
+            }
+          };
+
+          const { isRecording, toggleRecording, error: speechError } = useSpeechRecognition(handleSpeechResult);
+
+          const addIngredient = () => {
+            const name = customIngredient.trim() || selectedIngredient;
+            if (!name || !amount.trim()) {
+              showToast("Please select an ingredient and enter an amount.");
+              return;
+            }
+            setIngredients([...ingredients, { name, amount: amount.trim(), id: Date.now() }]);
+            setSelectedIngredient('');
+            setCustomIngredient('');
+            setAmount('');
+          };
+
+          const handleImageUpload = (e) => {
+            const files = Array.from(e.target.files);
+            const newMedia = files.map(file => URL.createObjectURL(file));
+            setMedia([...media, ...newMedia]);
+          };
+
+          const handleSubmit = (status) => {
+            if (!title.trim()) {
+              showToast("Please enter a recipe name!");
+              return;
+            }
+            onSave({
+              id: initialData?.id || Date.now().toString(),
+              authorId: user.id,
+              title,
+              ingredients,
+              instructions,
+              media,
+              status,
+              updatedAt: new Date().toISOString()
+            });
+          };
+
+          return (
+            <div className="max-w-2xl mx-auto pb-24 animate-fade-in">
+              <div className="flex items-center gap-4 mb-8 bg-white/80 backdrop-blur-xl p-4 rounded-full shadow-lg border-2 border-orange-100">
+                <button onClick={onCancel} className="p-4 bg-orange-100 rounded-full shadow-sm hover:bg-orange-200 transition-colors text-orange-800">
+                  <Icons.Back />
+                </button>
+                <h2 className="text-3xl font-black text-orange-900 tracking-tight ml-2">
+                  {initialData ? 'Edit Recipe' : 'New Recipe'}
+                </h2>
+              </div>
+
+              <div className="space-y-8">
+                {/* Basic Info */}
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
+                  <label className="block text-xl font-black text-orange-900 mb-4">What are you making?</label>
+                  <input 
+                    type="text" 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Masala Dosa, Butter Paneer" 
+                    className="w-full text-2xl p-5 bg-orange-50/50 border-4 border-orange-100 rounded-[2rem] focus:border-orange-400 focus:bg-white outline-none transition-all placeholder-orange-300 font-bold text-orange-900 shadow-inner"
+                  />
+                </div>
+
+                {/* Ingredients Section */}
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
+                  <label className="block text-xl font-black text-orange-900 mb-6 flex items-center gap-3">
+                    <span className="text-3xl bg-orange-100 p-2 rounded-2xl">🌶️</span> Ingredients
+                  </label>
+                  
+                  <div className="space-y-5 mb-8 bg-orange-50 p-6 rounded-[2rem] border-2 border-orange-100">
+                    <div>
+                      <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Category</label>
+                      <select 
+                        value={selectedCategory}
+                        onChange={(e) => { setSelectedCategory(e.target.value); setSelectedIngredient(''); setCustomIngredient(''); }}
+                        className="w-full p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm cursor-pointer"
+                      >
+                        {Object.keys(INGREDIENT_CATEGORIES).map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                        <option value="custom">Other / Custom</option>
+                      </select>
+                    </div>
+
+                    {selectedCategory !== 'custom' ? (
+                      <div>
+                        <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Select Ingredient</label>
+                        <select 
+                          value={selectedIngredient}
+                          onChange={(e) => setSelectedIngredient(e.target.value)}
+                          className="w-full p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm cursor-pointer"
+                        >
+                          <option value="">-- Choose --</option>
+                          {INGREDIENT_CATEGORIES[selectedCategory].map(ing => (
+                            <option key={ing} value={ing}>{ing}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Type Custom Ingredient</label>
+                        <input 
+                          type="text" 
+                          value={customIngredient}
+                          onChange={(e) => setCustomIngredient(e.target.value)}
+                          placeholder="e.g. Secret Masala"
+                          className="w-full p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Amount</label>
+                      <div className="flex gap-3 mt-1">
+                        <input 
+                          type="text" 
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="e.g. 1 tsp, 2 cups"
+                          className="flex-1 p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm"
+                        />
+                        <button 
+                          onClick={addIngredient}
+                          className={`px-8 py-4 text-white rounded-[1.5rem] font-black text-lg transition-all transform hover:scale-105 shadow-xl active:scale-95 ${user.btnTheme}`}
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-3">
+                    {ingredients.map(ing => (
+                      <li key={ing.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border-4 border-orange-50 shadow-sm group hover:border-orange-200 transition-colors">
+                        <span className="font-bold text-lg text-orange-900">{ing.name} <span className="text-orange-500 bg-orange-100 px-3 py-1 rounded-full text-sm ml-2">{ing.amount}</span></span>
+                        <button 
+                          onClick={() => setIngredients(ingredients.filter(i => i.id !== ing.id))}
+                          className="text-red-400 p-3 bg-red-50 hover:bg-red-100 hover:text-red-600 rounded-xl transition-colors shadow-sm"
+                        >
+                          <Icons.Trash />
+                        </button>
+                      </li>
+                    ))}
+                    {ingredients.length === 0 && (
+                      <div className="text-center p-8 border-4 border-dashed border-orange-200 rounded-[2rem] bg-orange-50/50">
+                        <p className="text-lg text-orange-400 font-bold">No ingredients added yet.</p>
+                      </div>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Instructions Section */}
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
+                  <div className="flex justify-between items-center mb-6">
+                     <label className="block text-xl font-black text-orange-900 flex items-center gap-3">
+                        <span className="text-3xl bg-green-100 p-2 rounded-2xl">👩‍🍳</span> Instructions
+                     </label>
+                     <p className="text-sm text-green-600 font-bold bg-green-50 px-4 py-2 rounded-full border-2 border-green-100">Tap mic to speak!</p>
+                  </div>
+                  
+                  <div className="relative">
+                    <textarea 
+                      value={instructions}
+                      onChange={(e) => setInstructions(e.target.value)}
+                      placeholder="1. Heat the ghee..."
+                      className="w-full h-64 p-6 pb-24 bg-orange-50/50 border-4 border-orange-100 rounded-[2rem] focus:border-orange-400 focus:bg-white outline-none resize-none transition-all placeholder-orange-300 text-orange-900 font-medium text-xl leading-relaxed shadow-inner"
+                    />
+                    {interimText && (
+                      <div className="absolute bottom-24 left-6 right-24 bg-green-100/90 backdrop-blur-sm p-4 rounded-2xl border-2 border-green-200 shadow-lg">
+                         <p className="text-base text-green-800 font-bold animate-pulse">
+                          Listening: <span className="font-medium italic">{interimText}...</span>
+                         </p>
+                      </div>
+                    )}
+                    
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleRecording();
+                      }}
+                      className={`absolute bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl text-white transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center border-4 border-white ${
+                        isRecording ? 'bg-red-500 animate-bounce shadow-red-500/50' : user.btnTheme
+                      }`}
+                      title={isRecording ? "Stop Recording" : "Record Instructions"}
+                    >
+                      {isRecording ? <Icons.Stop /> : <Icons.Mic />}
+                    </button>
+                  </div>
+                  {speechError && <p className="text-base font-bold text-red-600 mt-4 bg-red-50 p-4 rounded-2xl border-2 border-red-200">{speechError}</p>}
+                </div>
+
+                {/* Media Upload */}
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+                   <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
+                   <label className="block text-xl font-black text-orange-900 mb-6 flex items-center gap-3">
+                    <span className="text-3xl bg-blue-100 p-2 rounded-2xl">📸</span> Photos & Videos
+                  </label>
+                  <div className="flex flex-wrap gap-4">
+                    {media.map((url, idx) => (
+                      <div key={idx} className="relative w-32 h-32 rounded-[1.5rem] overflow-hidden shadow-lg border-4 border-white">
+                        <img src={url} alt={`Media ${idx}`} className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => setMedia(media.filter((_, i) => i !== idx))}
+                          className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white rounded-full p-2 hover:bg-red-500 transition-colors"
+                        >
+                          <Icons.Trash />
+                        </button>
+                      </div>
+                    ))}
+                    <label className={`w-32 h-32 flex flex-col items-center justify-center border-4 border-dashed border-orange-300 rounded-[1.5rem] cursor-pointer hover:bg-orange-100 hover:border-orange-400 text-orange-600 transition-all bg-orange-50/50 shadow-inner`}>
+                      <Icons.Camera />
+                      <span className="text-sm mt-3 font-black uppercase tracking-wider">Add</span>
+                      <input type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleImageUpload} />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                  <button 
+                    onClick={() => handleSubmit('draft')}
+                    className="flex-1 py-5 bg-white text-orange-800 border-4 border-orange-200 font-black text-xl rounded-full hover:bg-orange-50 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg"
+                  >
+                    Save as Draft
+                  </button>
+                  <button 
+                    onClick={() => handleSubmit('published')}
+                    className={`flex-1 py-5 text-white font-black text-xl rounded-full shadow-2xl transition-all transform hover:scale-[1.02] active:scale-95 border-4 border-white ${user.btnTheme}`}
+                  >
+                    Publish Recipe!
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const RecipeView = ({ recipe, user, onBack, onEdit, onDelete, showToast }) => {
+          return (
+            <div className="max-w-2xl mx-auto pb-24 animate-fade-in">
+              <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border-8 border-white">
+                <div className="h-72 bg-orange-100 relative">
+                  {recipe.media && recipe.media.length > 0 ? (
+                    <img src={recipe.media[0]} className="w-full h-full object-cover" alt={recipe.title} />
+                  ) : (
+                    <div className={`w-full h-full flex items-center justify-center ${user.lightTheme}`}>
+                      <span className="text-6xl">🍲</span>
+                    </div>
+                  )}
+                  <button onClick={onBack} className="absolute top-6 left-6 p-4 bg-white/90 backdrop-blur-md rounded-full shadow-xl text-gray-800 hover:bg-white transition-all transform hover:scale-105">
+                    <Icons.Back />
+                  </button>
+                  
+                  <div className="absolute top-6 right-6 flex gap-3">
+                    <button onClick={() => onDelete(recipe.id)} className="p-4 bg-white/90 backdrop-blur-md rounded-full shadow-xl text-red-500 hover:bg-white transition-all transform hover:scale-105 flex items-center gap-2 font-bold" title="Delete Recipe">
+                      <Icons.Trash />
+                    </button>
+                    <button onClick={onEdit} className="p-4 bg-white/90 backdrop-blur-md rounded-full shadow-xl text-orange-600 hover:bg-white transition-all transform hover:scale-105 flex items-center gap-2 font-bold">
+                      <Icons.Edit /> Edit
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-8 md:p-10 relative">
+                  <div className={`absolute -top-10 right-10 w-20 h-20 bg-white rounded-full p-2 shadow-xl`}>
+                     <img src={USERS[recipe.authorId].image} alt="Author" className="w-full h-full rounded-full object-cover" />
+                  </div>
+
+                  <h2 className="text-4xl font-black text-orange-900 mb-8 pr-20 leading-tight">{recipe.title}</h2>
+
+                  <div className="mb-10">
+                    <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3">
+                       <span className="text-3xl bg-orange-100 p-2 rounded-2xl">🌶️</span> Ingredients
+                    </h3>
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-orange-50 p-6 rounded-[2rem] border-4 border-orange-100/50">
+                      {recipe.ingredients.map(ing => (
+                        <li key={ing.id} className="flex items-center gap-4 text-orange-900 p-3 bg-white rounded-2xl shadow-sm border-2 border-orange-50">
+                          <span className={`w-4 h-4 rounded-full shadow-inner ${user.theme}`}></span>
+                          <div>
+                            <span className="font-black text-lg block leading-none mb-1">{ing.amount}</span> 
+                            <span className="font-medium text-base text-gray-600">{ing.name}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="mb-10">
+                    <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3">
+                        <span className="text-3xl bg-green-100 p-2 rounded-2xl">👩‍🍳</span> Instructions
+                    </h3>
+                    <div className="text-orange-900 whitespace-pre-wrap leading-relaxed text-xl font-medium bg-orange-50/50 p-8 rounded-[2rem] border-4 border-orange-100/50 shadow-inner">
+                      {recipe.instructions || <span className="italic text-orange-400">No instructions added.</span>}
+                    </div>
+                  </div>
+
+                  {recipe.media && recipe.media.length > 1 && (
+                    <div>
+                      <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3">
+                          <span className="text-3xl bg-blue-100 p-2 rounded-2xl">📸</span> Gallery
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {recipe.media.slice(1).map((url, idx) => (
+                          <img key={idx} src={url} alt="Gallery" className="w-full h-48 object-cover rounded-[2rem] shadow-lg border-4 border-orange-50 hover:scale-[1.02] transition-transform" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const Dashboard = ({ user, recipes, onNew, onViewRecipe, onLogout, onDeleteRecipe }) => {
+          const userRecipes = recipes.filter(r => r.authorId === user.id);
+          const drafts = userRecipes.filter(r => r.status === 'draft');
+          const published = userRecipes.filter(r => r.status === 'published');
+
+          const RecipeCard = ({ recipe }) => (
+            <div 
+              onClick={() => onViewRecipe(recipe)}
+              className="bg-white p-5 rounded-[2rem] shadow-lg border-4 border-orange-50 flex items-center gap-5 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all group"
+            >
+              <div className={`w-20 h-20 rounded-[1.5rem] flex-shrink-0 flex items-center justify-center overflow-hidden shadow-inner border-2 border-orange-100 ${user.lightTheme}`}>
+                {recipe.media && recipe.media.length > 0 ? (
+                  <img src={recipe.media[0]} className="w-full h-full object-cover" alt="thumb" />
+                ) : (
+                  <span className="text-3xl">🍲</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-black text-orange-900 truncate text-xl mb-1">{recipe.title || 'Untitled Recipe'}</h4>
+                <p className="text-base font-bold text-orange-500 bg-orange-50 inline-block px-3 py-1 rounded-full">{recipe.ingredients.length} ingredients</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDeleteRecipe(recipe.id); }}
+                  className="p-3 bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors shadow-sm"
+                  title="Delete Recipe"
+                >
+                  <Icons.Trash />
+                </button>
+                <div className={`text-orange-300 group-hover:${user.accent} transition-colors p-2 bg-orange-50 rounded-full group-hover:bg-orange-100`}>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+              </div>
+            </div>
+          );
+
+          return (
+            <div className="max-w-2xl mx-auto pb-24 animate-fade-in">
+              <div className="flex justify-between items-center mb-12 bg-white/90 backdrop-blur-xl p-6 rounded-[3rem] shadow-xl border-4 border-white">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                     <img 
+                       src={user.image} 
+                       alt={user.name} 
+                       className={`w-20 h-20 rounded-full border-4 ${user.borderTheme} object-cover shadow-lg`} 
+                     />
+                     <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-4 border-white ${user.theme}`}></div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-500 font-black uppercase tracking-widest mb-1">Welcome</p>
+                    <h2 className="text-3xl font-black text-orange-900">{user.name}</h2>
+                  </div>
+                </div>
+                <button onClick={onLogout} className="text-sm font-black text-orange-700 hover:text-orange-900 px-5 py-3 bg-orange-100 rounded-full transition-colors shadow-sm hover:bg-orange-200">Switch User</button>
+              </div>
+
+              <button 
+                onClick={onNew}
+                className={`w-full py-8 rounded-[3rem] text-white font-black text-2xl shadow-2xl flex justify-center items-center gap-3 transition-all transform hover:scale-[1.02] active:scale-95 mb-12 border-8 border-white ${user.btnTheme}`}
+              >
+                <div className="bg-white/30 p-3 rounded-full shadow-inner"><Icons.Plus /></div> Add New Recipe
+              </button>
+
+              <div className="space-y-12">
+                <div>
+                  <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3 pl-2">
+                    My Recipes <span className={`text-white text-base px-4 py-1 rounded-full shadow-sm ${user.theme}`}>{published.length}</span>
+                  </h3>
+                  <div className="space-y-4">
+                    {published.length === 0 ? (
+                      <div className="p-8 bg-white rounded-[2rem] border-4 border-dashed border-orange-200 text-center shadow-sm">
+                        <p className="text-xl text-orange-400 font-bold">You haven't published any recipes yet.</p>
+                      </div>
+                    ) : (
+                      published.map(r => <RecipeCard key={r.id} recipe={r} />)
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3 pl-2 opacity-80">
+                    Drafts <span className="bg-orange-200 text-orange-800 text-base px-4 py-1 rounded-full shadow-sm">{drafts.length}</span>
+                  </h3>
+                  <div className="space-y-4">
+                    {drafts.length === 0 ? (
+                      <div className="p-8 bg-orange-50/50 rounded-[2rem] border-4 border-dashed border-orange-100 text-center">
+                        <p className="text-lg text-orange-300 font-bold">No drafts saved.</p>
+                      </div>
+                    ) : (
+                      drafts.map(r => <RecipeCard key={r.id} recipe={r} />)
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const WelcomeScreen = ({ onSelectUser }) => (
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+            
+            <div className="w-full max-w-5xl relative bg-white/80 backdrop-blur-xl border-[12px] border-dashed border-orange-400 rounded-[4rem] p-8 sm:p-12 shadow-2xl flex flex-col items-center mt-10">
+              
+              <div className="absolute -top-10 -left-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '3s'}}>🍅</div>
+              <div className="absolute -top-10 -right-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '4s'}}>🌿</div>
+              <div className="absolute -bottom-10 -left-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '3.5s'}}>🌶️</div>
+              <div className="absolute -bottom-10 -right-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '4.5s'}}>🍋</div>
+              <div className="absolute top-1/2 -left-12 text-7xl transform -translate-y-1/2 drop-shadow-lg">🧅</div>
+              <div className="absolute top-1/2 -right-12 text-7xl transform -translate-y-1/2 drop-shadow-lg">🧄</div>
+              
+              <div className="text-center mb-8">
+                <h1 className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-pink-600 mb-4 drop-shadow-sm">
+                  Yummy Tummy
+                </h1>
+                <p className="text-2xl text-orange-800 font-black bg-orange-100 inline-block px-8 py-3 rounded-full shadow-inner border-4 border-orange-200">
+                  I am hungry! What are you making today?
+                </p>
+              </div>
+
+              <div className="w-full max-w-4xl h-64 md:h-[400px] rounded-[3rem] overflow-hidden border-8 border-white shadow-2xl mb-12 relative group bg-orange-200">
+                <img 
+                  src={MAIN_IMAGE} 
+                  alt="Kitchen Illustration" 
+                  className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-orange-900/40 to-transparent pointer-events-none"></div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-8 w-full max-w-3xl">
+                <button 
+                  onClick={() => onSelectUser(USERS.bedani)}
+                  className="flex-1 bg-gradient-to-b from-blue-100 to-blue-200 p-8 rounded-[3rem] shadow-[0_20px_50px_rgba(59,130,246,0.4)] border-8 border-white hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-3 hover:scale-105 group flex flex-col items-center relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                  <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+                  
+                  <div className="w-40 h-40 rounded-full mb-6 overflow-hidden border-8 border-white shadow-2xl relative z-10">
+                     <img 
+                       src={USERS.bedani.image} 
+                       alt="Bedani Mom" 
+                       className="w-full h-full object-cover object-top" 
+                     />
+                  </div>
+                  <h2 className="text-3xl font-black text-blue-900 relative z-10 bg-white/90 px-6 py-2 rounded-full border-4 border-blue-200 shadow-sm">Bedani Mom</h2>
+                </button>
+
+                <button 
+                  onClick={() => onSelectUser(USERS.varanasi)}
+                  className="flex-1 bg-gradient-to-b from-pink-100 to-pink-200 p-8 rounded-[3rem] shadow-[0_20px_50px_rgba(236,72,153,0.4)] border-8 border-white hover:border-pink-400 transition-all duration-300 transform hover:-translate-y-3 hover:scale-105 group flex flex-col items-center relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                  <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+
+                  <div className="w-40 h-40 rounded-full mb-6 overflow-hidden border-8 border-white shadow-2xl relative z-10">
+                     <img 
+                       src={USERS.varanasi.image} 
+                       alt="Varanasi Mom" 
+                       className="w-full h-full object-cover object-top" 
+                     />
+                  </div>
+                  <h2 className="text-3xl font-black text-pink-900 relative z-10 bg-white/90 px-6 py-2 rounded-full border-4 border-pink-200 shadow-sm">Varanasi Mom</h2>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+        function App() {
+          const [currentUser, setCurrentUser] = useState(null);
+          const [currentView, setCurrentView] = useState('welcome'); 
+          const [recipes, setRecipes] = useState([]);
+          const [editingRecipe, setEditingRecipe] = useState(null);
+          const [viewingRecipe, setViewingRecipe] = useState(null);
+          const [toastMessage, setToastMessage] = useState('');
+
+          useEffect(() => {
+            if (toastMessage) {
+              const timer = setTimeout(() => setToastMessage(''), 3000);
+              return () => clearTimeout(timer);
+            }
+          }, [toastMessage]);
+
+          const showToast = (msg) => setToastMessage(msg);
+
+          const handleSaveRecipe = (recipeData) => {
+            setRecipes(prev => {
+              const exists = prev.findIndex(r => r.id === recipeData.id);
+              if (exists >= 0) {
+                const newRecipes = [...prev];
+                newRecipes[exists] = recipeData;
+                return newRecipes;
+              }
+              return [recipeData, ...prev];
+            });
+            setEditingRecipe(null);
+            setCurrentView('dashboard');
+            showToast(`Recipe ${recipeData.status === 'published' ? 'published' : 'saved as draft'}!`);
+          };
+
+          const handleDeleteRecipe = (recipeId) => {
+            setRecipes(prev => prev.filter(r => r.id !== recipeId));
+            setCurrentView('dashboard');
+            setViewingRecipe(null);
+            showToast('Recipe deleted successfully!');
+          };
+
+          const backgroundTheme = currentView === 'welcome' ? 'bg-[#fff7ed]' : 'bg-[#fff7ed]';
+
+          return (
+            <div className={`min-h-screen font-sans transition-colors duration-500 ${backgroundTheme}`}>
+              <style dangerouslySetInnerHTML={{__html: `
+                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+                body { 
+                  font-family: 'Nunito', sans-serif; 
+                  background-color: #fff7ed; 
+                  background-image: radial-gradient(#fdba74 3px, transparent 3px);
+                  background-size: 40px 40px;
+                }
+                .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+                .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+                @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+                @keyframes blob {
+                  0% { transform: translate(0px, 0px) scale(1); }
+                  33% { transform: translate(30px, -50px) scale(1.1); }
+                  66% { transform: translate(-20px, 20px) scale(0.9); }
+                  100% { transform: translate(0px, 0px) scale(1); }
+                }
+                .animate-blob { animation: blob 7s infinite; }
+                .animation-delay-2000 { animation-delay: 2s; }
+              `}} />
+
+              {currentView === 'welcome' && (
+                <WelcomeScreen onSelectUser={(user) => {
+                  setCurrentUser(user);
+                  setCurrentView('dashboard');
+                }} />
+              )}
+
+              {currentView !== 'welcome' && (
+                <div className="p-4 md:p-8 pt-8 relative max-w-4xl mx-auto mt-4 md:mt-10 mb-10">
+                   <div className="absolute inset-0 bg-white/80 backdrop-blur-2xl border-[12px] border-dashed border-orange-400 rounded-[4rem] shadow-2xl -z-10"></div>
+                   
+                   <div className="absolute -top-8 -left-8 text-6xl animate-bounce hidden sm:block drop-shadow-md" style={{animationDuration: '3.2s'}}>🥕</div>
+                   <div className="absolute -top-8 -right-8 text-6xl animate-bounce hidden sm:block drop-shadow-md" style={{animationDuration: '4.1s'}}>🍋</div>
+                   
+                   <div className="relative z-10 p-2 sm:p-6">
+                    {currentView === 'dashboard' && (
+                      <Dashboard 
+                        user={currentUser} 
+                        recipes={recipes} 
+                        onNew={() => { setEditingRecipe(null); setCurrentView('form'); }}
+                        onViewRecipe={(r) => { setViewingRecipe(r); setCurrentView('view'); }}
+                        onLogout={() => { setCurrentUser(null); setCurrentView('welcome'); }}
+                        onDeleteRecipe={handleDeleteRecipe}
+                      />
+                    )}
+
+                    {currentView === 'form' && (
+                      <RecipeForm 
+                        user={currentUser}
+                        initialData={editingRecipe}
+                        onSave={handleSaveRecipe}
+                        onCancel={() => setCurrentView(editingRecipe ? 'view' : 'dashboard')}
+                        showToast={showToast}
+                      />
+                    )}
+
+                    {currentView === 'view' && viewingRecipe && (
+                      <RecipeView 
+                        recipe={viewingRecipe}
+                        user={currentUser}
+                        onBack={() => setCurrentView('dashboard')}
+                        onEdit={() => { setEditingRecipe(viewingRecipe); setCurrentView('form'); }}
+                        onDelete={handleDeleteRecipe}
+                        showToast={showToast}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <Toast message={toastMessage} onClose={() => setToastMessage('')} />
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
