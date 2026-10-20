@@ -2,75 +2,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Yummy Tummy</title>
     
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Load React, ReactDOM, and Babel for in-browser JSX compilation -->
+    <!-- Load React, ReactDOM, and Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Load Firebase via Module (Your Proven, Stable Loader) -->
+    <script type="module">
+      import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+      // Expose to window so React can access them safely after loading
+      window.Firebase = {
+        initializeApp, getApps, getApp, getAuth, signInAnonymously,
+        getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection,
+        getStorage, storageRef, uploadBytes, getDownloadURL
+      };
+    </script>
 </head>
 <body>
-    <!-- The root element where React will mount the app -->
     <div id="root"></div>
 
     <script type="text/babel">
+        // EXACT FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi76xBg6G1GC7_r4CfwAWjXHuVAql7AcU",
+            authDomain: "yummy-tummy-e3872.firebaseapp.com",
+            projectId: "yummy-tummy-e3872",
+            storageBucket: "yummy-tummy-e3872.firebasestorage.app",
+            messagingSenderId: "1078416458697",
+            appId: "1:1078416458697:web:858806fe1244e45d999e18",
+            measurementId: "G-V7V25FT9GW"
+        };
+        const dbAppId = 'yummy-tummy-app'; 
+
         const { useState, useEffect, useRef } = React;
 
         const INGREDIENT_CATEGORIES = {
-          "Spices": [
-            "Turmeric (Haldi)", "Cumin (Jeera)", "Coriander (Dhania)", 
-            "Red Chili Powder (Lal Mirch)", "Black Pepper (Kali Mirch)", 
-            "Green Cardamom (Elaichi)", "Black Cardamom (Badi Elaichi)", 
-            "Cinnamon (Dalchini)", "Cloves (Laung)", "Mustard Seeds (Rai / Sarson)", 
-            "Fenugreek Seeds (Methi)", "Asafoetida (Hing)", "Fennel Seeds (Saunf)", 
-            "Carom Seeds (Ajwain)", "Nigella Seeds (Kalonji)", "Indian Bay Leaf (Tej Patta)", 
-            "Curry Leaves (Kadi Patta)", "Dry Mango Powder (Amchur)", "Pomegranate Seeds (Anardana)", 
-            "Kokum", "Black Stone Flower (Kalpasi)", "Saffron (Kesar)", "Kasuri Methi", 
-            "Garam Masala", "Panch Phoron", "Chaat Masala", "Sambar / Rasam Powder"
-          ],
-          "Indian Flours": [
-            "Atta (Whole wheat)", "Maida (Refined white)", "Besan (Gram Flour)", 
-            "Ragi Flour", "Jowar Flour", "Bajra Flour", "Sooji / Rava (Semolina)", "Sabudana Flour"
-          ],
-          "Indian Dals": [
-            "Toor Dal / Arhar", "Moong Dal", "Chana Dal", "Urad Dal", 
-            "Masoor Dal", "Rajma", "Kabuli Chana"
-          ],
-          "Core Pantry": [
-            "Ghee", "Paneer", "Tamarind paste", "Jaggery"
-          ],
-          "Common Indian Vegetables": [
-            "Onions", "Potatoes", "Garlic", "Ginger", "Bitter gourd (Karela)", 
-            "Bottle gourd (Lauki)", "Ridge gourd (Tori)", "Tomatoes", "Okra (Bhindi)", 
-            "Eggplants (Baingan)", "Cauliflower (Gobi)", "Green peas", "Spinach (Palak)", 
-            "Fenugreek leaves (Methi)"
-          ]
+          "Spices": ["Turmeric (Haldi)", "Cumin (Jeera)", "Coriander (Dhania)", "Red Chili Powder (Lal Mirch)", "Garam Masala", "Mustard Seeds (Rai / Sarson)"],
+          "Indian Flours": ["Atta (Whole wheat)", "Maida (Refined white)", "Besan (Gram Flour)", "Sooji / Rava (Semolina)"],
+          "Indian Dals": ["Toor Dal / Arhar", "Moong Dal", "Chana Dal", "Urad Dal", "Masoor Dal"],
+          "Core Pantry": ["Ghee", "Paneer", "Tamarind paste", "Jaggery"],
+          "Common Indian Vegetables": ["Onions", "Potatoes", "Garlic", "Ginger", "Tomatoes", "Spinach (Palak)"]
         };
 
         const USERS = {
           bedani: {
-            id: 'bedani',
-            name: 'Bedani Mom',
-            image: 'image_239859.jpg', 
-            theme: 'bg-blue-500',
-            lightTheme: 'bg-blue-50',
-            btnTheme: 'bg-blue-500 hover:bg-blue-400 shadow-blue-500/40',
-            accent: 'text-blue-600',
-            borderTheme: 'border-blue-400'
+            id: 'bedani', name: 'Bedani Mom', image: 'image_239859.jpg', 
+            theme: 'bg-blue-500', lightTheme: 'bg-blue-50', btnTheme: 'bg-blue-500 hover:bg-blue-400', accent: 'text-blue-600', borderTheme: 'border-blue-400'
           },
           varanasi: {
-            id: 'varanasi',
-            name: 'Varanasi Mom',
-            image: 'image_2397fa.jpg', 
-            theme: 'bg-pink-500',
-            lightTheme: 'bg-pink-50',
-            btnTheme: 'bg-pink-500 hover:bg-pink-400 shadow-pink-500/40',
-            accent: 'text-pink-600',
-            borderTheme: 'border-pink-400'
+            id: 'varanasi', name: 'Varanasi Mom', image: 'image_2397fa.jpg', 
+            theme: 'bg-pink-500', lightTheme: 'bg-pink-50', btnTheme: 'bg-pink-500 hover:bg-pink-400', accent: 'text-pink-600', borderTheme: 'border-pink-400'
+          },
+          family: {
+            id: 'family', name: 'Family/Friend Chef', image: 'Screenshot 2026-10-15 114218.jpg', 
+            theme: 'bg-teal-500', lightTheme: 'bg-teal-50', btnTheme: 'bg-teal-500 hover:bg-teal-400', accent: 'text-teal-600', borderTheme: 'border-teal-400'
           }
         };
 
@@ -83,108 +78,87 @@
           Camera: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>,
           Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
           Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>,
-          Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+          Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>,
+          Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>,
+          Share: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
         };
 
         const Toast = ({ message, onClose }) => {
           if (!message) return null;
           return (
-            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl z-50 animate-fade-in-up flex items-center gap-4 text-lg font-bold border-4 border-gray-700">
-              <span>{message}</span>
-              <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center">&times;</button>
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-full shadow-2xl z-50 animate-fade-in-up flex items-center justify-between gap-4 text-base sm:text-lg font-bold border-4 border-gray-700 w-11/12 max-w-md">
+              <span className="truncate">{message}</span>
+              <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center">&times;</button>
             </div>
           );
         };
 
-        const useSpeechRecognition = (onResult) => {
+        // =========================================================================
+        // STRICT ANTI-DUPLICATION MICROPHONE LOGIC
+        // =========================================================================
+        const useSpeechRecognition = (onSessionEnd, onSessionUpdate) => {
           const [isRecording, setIsRecording] = useState(false);
           const [error, setError] = useState(null);
           const recognitionRef = useRef(null);
+          const lastFinalIndexRef = useRef(-1); 
 
           useEffect(() => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRecognition) {
-              recognitionRef.current = new SpeechRecognition();
-              recognitionRef.current.continuous = true;
-              recognitionRef.current.interimResults = true;
-              recognitionRef.current.lang = 'en-IN'; 
+              const recognition = new SpeechRecognition();
+              recognitionRef.current = recognition;
+              recognition.continuous = true;
+              recognition.interimResults = true;
+              recognition.lang = 'en-IN'; 
 
-              recognitionRef.current.onresult = (event) => {
-                let finalTranscript = '';
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
+              recognition.onstart = () => {
+                lastFinalIndexRef.current = -1; 
+                setIsRecording(true);
+              };
+
+              recognition.onresult = (event) => {
+                let finalStr = '';
+                let interimStr = '';
+                
+                // Reconstruct the exact string from raw memory to mathematically prevent mobile duplication
+                for (let i = 0; i < event.results.length; ++i) {
                   if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
+                    if (i > lastFinalIndexRef.current) {
+                      finalStr += event.results[i][0].transcript;
+                      lastFinalIndexRef.current = i; 
+                    }
                   } else {
-                    interimTranscript += event.results[i][0].transcript;
+                    interimStr += event.results[i][0].transcript;
                   }
                 }
-                onResult(finalTranscript, interimTranscript);
+                onSessionUpdate(finalStr, interimStr);
               };
 
-              recognitionRef.current.onerror = (event) => {
-                console.error("Speech recognition error", event.error);
-                // Ignore 'aborted' errors which happen naturally when we force stop the recording
-                if (event.error !== 'aborted') {
-                    setError("Microphone error. Please try typing instead.");
-                }
+              recognition.onend = () => {
                 setIsRecording(false);
+                onSessionEnd(); 
               };
 
-              recognitionRef.current.onend = () => {
+              recognition.onerror = (event) => {
+                if (event.error !== 'aborted') setError("Microphone error. Please try typing instead.");
                 setIsRecording(false);
+                onSessionEnd(); 
               };
             } else {
-              setError("Voice typing is not supported in this browser. Please type instead.");
+              setError("Voice typing is not supported in this browser.");
             }
 
-            // Cleanup when the component unmounts
-            return () => {
-              if (recognitionRef.current) {
-                try {
-                  recognitionRef.current.stop();
-                } catch(e) {}
-              }
-            };
-          }, [onResult]);
+            return () => { if (recognitionRef.current) try { recognitionRef.current.stop(); } catch(e) {} };
+          }, []); 
 
           const toggleRecording = () => {
             if (!recognitionRef.current) return;
             
             if (isRecording) {
-              // Stop recording
-              setIsRecording(false); 
-              try {
-                recognitionRef.current.abort(); // Force stop immediately
-              } catch (err) {
-                try {
-                   recognitionRef.current.stop();
-                } catch(e) {
-                   console.error("Error stopping mic:", e);
-                }
-              }
+              try { recognitionRef.current.stop(); } catch (err) {}
             } else {
-              // Start recording
               setError(null);
-              setIsRecording(true);
-              try {
-                recognitionRef.current.start();
-              } catch (err) {
-                console.error("Error starting mic:", err);
-                // If it fails to start (e.g. browser thought it was already listening), abort and restart
-                try {
-                    recognitionRef.current.abort();
-                    setTimeout(() => {
-                        try {
-                           recognitionRef.current.start();
-                        } catch(e) {
-                           setIsRecording(false);
-                        }
-                    }, 200);
-                } catch(e) {
-                    setIsRecording(false);
-                }
-              }
+              try { recognitionRef.current.start(); } catch (err) { setIsRecording(false); }
             }
           };
 
@@ -194,257 +168,221 @@
         const RecipeForm = ({ user, initialData, onSave, onCancel, showToast }) => {
           const [title, setTitle] = useState(initialData?.title || '');
           const [ingredients, setIngredients] = useState(initialData?.ingredients || []);
-          const [instructions, setInstructions] = useState(initialData?.instructions || '');
           const [media, setMedia] = useState(initialData?.media || []);
+          const [rawFiles, setRawFiles] = useState([]);
+          const [isUploading, setIsUploading] = useState(false);
           
           const [selectedCategory, setSelectedCategory] = useState(Object.keys(INGREDIENT_CATEGORIES)[0]);
           const [selectedIngredient, setSelectedIngredient] = useState('');
           const [customIngredient, setCustomIngredient] = useState('');
           const [amount, setAmount] = useState('');
-          const [interimText, setInterimText] = useState('');
 
-          const handleSpeechResult = (final, interim) => {
-            if (final) {
-              setInstructions(prev => prev + (prev.length > 0 && !prev.endsWith(' ') ? ' ' : '') + final + ' ');
-              setInterimText('');
-            } else {
-              setInterimText(interim);
-            }
+          const [instructions, setInstructions] = useState(initialData?.instructions || '');
+          const [sessionFinal, setSessionFinal] = useState('');
+          const [interimText, setInterimText] = useState('');
+          const sessionFinalRef = useRef('');
+
+          const handleSessionUpdate = (finalText, interim) => {
+            sessionFinalRef.current = finalText;
+            setSessionFinal(finalText); 
+            setInterimText(interim);
           };
 
-          const { isRecording, toggleRecording, error: speechError } = useSpeechRecognition(handleSpeechResult);
+          const handleSessionEnd = () => {
+            const finalToCommit = sessionFinalRef.current;
+            if (finalToCommit) {
+              setInstructions(prev => prev + (prev && !prev.endsWith(' ') && !finalToCommit.startsWith(' ') ? ' ' : '') + finalToCommit + ' ');
+            }
+            sessionFinalRef.current = '';
+            setSessionFinal('');
+            setInterimText('');
+          };
+
+          const { isRecording, toggleRecording, error: speechError } = useSpeechRecognition(handleSessionEnd, handleSessionUpdate);
+
+          const displayInstructions = instructions + (instructions && sessionFinal && !instructions.endsWith(' ') && !sessionFinal.startsWith(' ') ? ' ' : '') + sessionFinal;
 
           const addIngredient = () => {
             const name = customIngredient.trim() || selectedIngredient;
-            if (!name || !amount.trim()) {
-              showToast("Please select an ingredient and enter an amount.");
-              return;
-            }
+            if (!name || !amount.trim()) { showToast("Please select an ingredient and enter an amount."); return; }
             setIngredients([...ingredients, { name, amount: amount.trim(), id: Date.now() }]);
-            setSelectedIngredient('');
-            setCustomIngredient('');
-            setAmount('');
+            setSelectedIngredient(''); setCustomIngredient(''); setAmount('');
           };
 
           const handleImageUpload = (e) => {
             const files = Array.from(e.target.files);
+            setRawFiles([...rawFiles, ...files]);
             const newMedia = files.map(file => URL.createObjectURL(file));
             setMedia([...media, ...newMedia]);
           };
 
-          const handleSubmit = (status) => {
-            if (!title.trim()) {
-              showToast("Please enter a recipe name!");
-              return;
+          const handleSubmit = async (status) => {
+            if (!title.trim()) { showToast("Please enter a recipe name!"); return; }
+            setIsUploading(true);
+            
+            try {
+              let finalMediaUrls = [...media].filter(url => !url.startsWith('blob:')); 
+              
+              if (rawFiles.length > 0) {
+                 showToast(`Uploading ${rawFiles.length} media file(s)... Please wait.`);
+              }
+
+              for (let i = 0; i < rawFiles.length; i++) {
+                  const file = rawFiles[i];
+                  try {
+                      const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, ''); 
+                      const fileRef = window.Firebase.storageRef(window.storage, `recipes/${Date.now()}_${safeName}`);
+                      
+                      await window.Firebase.uploadBytes(fileRef, file);
+                      const downloadUrl = await window.Firebase.getDownloadURL(fileRef);
+                      finalMediaUrls.push(downloadUrl);
+                  } catch (uploadErr) {
+                      console.error("Upload Error:", uploadErr);
+                      showToast("Error uploading file. Check Firebase Storage rules!");
+                      setIsUploading(false);
+                      return; 
+                  }
+              }
+
+              showToast("Saving recipe data to database...");
+
+              const recipeData = {
+                authorId: user.id,
+                title,
+                ingredients,
+                instructions: displayInstructions,
+                media: finalMediaUrls,
+                status,
+                updatedAt: new Date().toISOString()
+              };
+
+              const docId = initialData?.id || Date.now().toString();
+              recipeData.id = docId;
+
+              const docRef = window.Firebase.doc(window.db, 'artifacts', dbAppId, 'public', 'data', 'recipes', docId);
+              await window.Firebase.setDoc(docRef, recipeData);
+
+              setRawFiles([]); 
+              onSave(recipeData);
+
+            } catch (error) {
+              console.error("Error saving recipe:", error);
+              showToast("Error saving recipe to cloud. Check Anonymous Login.");
+            } finally {
+              setIsUploading(false);
             }
-            onSave({
-              id: initialData?.id || Date.now().toString(),
-              authorId: user.id,
-              title,
-              ingredients,
-              instructions,
-              media,
-              status,
-              updatedAt: new Date().toISOString()
-            });
           };
 
           return (
             <div className="max-w-2xl mx-auto pb-24 animate-fade-in">
-              <div className="flex items-center gap-4 mb-8 bg-white/80 backdrop-blur-xl p-4 rounded-full shadow-lg border-2 border-orange-100">
-                <button onClick={onCancel} className="p-4 bg-orange-100 rounded-full shadow-sm hover:bg-orange-200 transition-colors text-orange-800">
+              <div className="flex items-center gap-4 mb-6 sm:mb-8 bg-white/80 backdrop-blur-xl p-3 sm:p-4 rounded-full shadow-lg border-2 border-orange-100">
+                <button disabled={isUploading} onClick={onCancel} className="p-3 sm:p-4 bg-orange-100 rounded-full shadow-sm hover:bg-orange-200 transition-colors text-orange-800 disabled:opacity-50">
                   <Icons.Back />
                 </button>
-                <h2 className="text-3xl font-black text-orange-900 tracking-tight ml-2">
+                <h2 className="text-2xl sm:text-3xl font-black text-orange-900 tracking-tight ml-2">
                   {initialData ? 'Edit Recipe' : 'New Recipe'}
                 </h2>
               </div>
 
-              <div className="space-y-8">
-                {/* Basic Info */}
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
                   <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
-                  <label className="block text-xl font-black text-orange-900 mb-4">What are you making?</label>
-                  <input 
-                    type="text" 
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Masala Dosa, Butter Paneer" 
-                    className="w-full text-2xl p-5 bg-orange-50/50 border-4 border-orange-100 rounded-[2rem] focus:border-orange-400 focus:bg-white outline-none transition-all placeholder-orange-300 font-bold text-orange-900 shadow-inner"
-                  />
+                  <label className="block text-lg sm:text-xl font-black text-orange-900 mb-4">What are you making?</label>
+                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Masala Dosa, Butter Paneer" className="w-full text-xl sm:text-2xl p-4 sm:p-5 bg-orange-50/50 border-4 border-orange-100 rounded-[1.5rem] sm:rounded-[2rem] focus:border-orange-400 focus:bg-white outline-none font-bold text-orange-900 shadow-inner" />
                 </div>
 
-                {/* Ingredients Section */}
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+                <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
                   <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
-                  <label className="block text-xl font-black text-orange-900 mb-6 flex items-center gap-3">
-                    <span className="text-3xl bg-orange-100 p-2 rounded-2xl">🌶️</span> Ingredients
-                  </label>
+                  <label className="block text-lg sm:text-xl font-black text-orange-900 mb-6 flex items-center gap-3"><span className="text-2xl sm:text-3xl bg-orange-100 p-2 rounded-2xl">🌶️</span> Ingredients</label>
                   
-                  <div className="space-y-5 mb-8 bg-orange-50 p-6 rounded-[2rem] border-2 border-orange-100">
+                  <div className="space-y-4 sm:space-y-5 mb-8 bg-orange-50 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border-2 border-orange-100">
                     <div>
-                      <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Category</label>
-                      <select 
-                        value={selectedCategory}
-                        onChange={(e) => { setSelectedCategory(e.target.value); setSelectedIngredient(''); setCustomIngredient(''); }}
-                        className="w-full p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm cursor-pointer"
-                      >
-                        {Object.keys(INGREDIENT_CATEGORIES).map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
+                      <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setSelectedIngredient(''); setCustomIngredient(''); }} className="w-full p-3 sm:p-4 text-base sm:text-lg border-4 border-white rounded-[1.25rem] sm:rounded-[1.5rem] bg-white text-orange-900 font-bold outline-none cursor-pointer">
+                        {Object.keys(INGREDIENT_CATEGORIES).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         <option value="custom">Other / Custom</option>
                       </select>
                     </div>
 
                     {selectedCategory !== 'custom' ? (
-                      <div>
-                        <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Select Ingredient</label>
-                        <select 
-                          value={selectedIngredient}
-                          onChange={(e) => setSelectedIngredient(e.target.value)}
-                          className="w-full p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm cursor-pointer"
-                        >
-                          <option value="">-- Choose --</option>
-                          {INGREDIENT_CATEGORIES[selectedCategory].map(ing => (
-                            <option key={ing} value={ing}>{ing}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <select value={selectedIngredient} onChange={(e) => setSelectedIngredient(e.target.value)} className="w-full p-3 sm:p-4 text-base sm:text-lg border-4 border-white rounded-[1.25rem] sm:rounded-[1.5rem] bg-white text-orange-900 font-bold outline-none cursor-pointer">
+                        <option value="">-- Choose --</option>
+                        {INGREDIENT_CATEGORIES[selectedCategory].map(ing => <option key={ing} value={ing}>{ing}</option>)}
+                      </select>
                     ) : (
-                      <div>
-                        <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Type Custom Ingredient</label>
-                        <input 
-                          type="text" 
-                          value={customIngredient}
-                          onChange={(e) => setCustomIngredient(e.target.value)}
-                          placeholder="e.g. Secret Masala"
-                          className="w-full p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm"
-                        />
-                      </div>
+                      <input type="text" value={customIngredient} onChange={(e) => setCustomIngredient(e.target.value)} placeholder="Type Custom Ingredient" className="w-full p-3 sm:p-4 text-base sm:text-lg border-4 border-white rounded-[1.25rem] sm:rounded-[1.5rem] bg-white text-orange-900 font-bold outline-none" />
                     )}
 
-                    <div>
-                      <label className="text-sm text-orange-800 font-bold mb-2 block uppercase tracking-wider">Amount</label>
-                      <div className="flex gap-3 mt-1">
-                        <input 
-                          type="text" 
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          placeholder="e.g. 1 tsp, 2 cups"
-                          className="flex-1 p-4 border-4 border-white rounded-[1.5rem] bg-white text-orange-900 font-bold focus:border-orange-300 outline-none transition-colors shadow-sm"
-                        />
-                        <button 
-                          onClick={addIngredient}
-                          className={`px-8 py-4 text-white rounded-[1.5rem] font-black text-lg transition-all transform hover:scale-105 shadow-xl active:scale-95 ${user.btnTheme}`}
-                        >
-                          Add
-                        </button>
-                      </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input type="text" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount (e.g. 1 tsp)" className="w-full sm:flex-1 p-3 sm:p-4 text-base sm:text-lg border-4 border-white rounded-[1.25rem] sm:rounded-[1.5rem] bg-white text-orange-900 font-bold outline-none shadow-sm" />
+                      <button onClick={addIngredient} className={`w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-white rounded-[1.25rem] sm:rounded-[1.5rem] font-black text-base sm:text-lg shadow-xl active:scale-95 ${user.btnTheme}`}>Add</button>
                     </div>
                   </div>
 
                   <ul className="space-y-3">
                     {ingredients.map(ing => (
-                      <li key={ing.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border-4 border-orange-50 shadow-sm group hover:border-orange-200 transition-colors">
-                        <span className="font-bold text-lg text-orange-900">{ing.name} <span className="text-orange-500 bg-orange-100 px-3 py-1 rounded-full text-sm ml-2">{ing.amount}</span></span>
-                        <button 
-                          onClick={() => setIngredients(ingredients.filter(i => i.id !== ing.id))}
-                          className="text-red-400 p-3 bg-red-50 hover:bg-red-100 hover:text-red-600 rounded-xl transition-colors shadow-sm"
-                        >
-                          <Icons.Trash />
-                        </button>
+                      <li key={ing.id} className="flex justify-between items-center p-3 sm:p-4 bg-white rounded-2xl border-4 border-orange-50 shadow-sm">
+                        <span className="font-bold text-base sm:text-lg text-orange-900">{ing.name} <span className="text-orange-500 bg-orange-100 px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm ml-2">{ing.amount}</span></span>
+                        <button onClick={() => setIngredients(ingredients.filter(i => i.id !== ing.id))} className="text-red-400 p-2 sm:p-3 bg-red-50 hover:bg-red-100 rounded-xl"><Icons.Trash /></button>
                       </li>
                     ))}
-                    {ingredients.length === 0 && (
-                      <div className="text-center p-8 border-4 border-dashed border-orange-200 rounded-[2rem] bg-orange-50/50">
-                        <p className="text-lg text-orange-400 font-bold">No ingredients added yet.</p>
-                      </div>
-                    )}
                   </ul>
                 </div>
 
-                {/* Instructions Section */}
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+                <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
                   <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
-                  <div className="flex justify-between items-center mb-6">
-                     <label className="block text-xl font-black text-orange-900 flex items-center gap-3">
-                        <span className="text-3xl bg-green-100 p-2 rounded-2xl">👩‍🍳</span> Instructions
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                     <label className="block text-lg sm:text-xl font-black text-orange-900 flex items-center gap-3">
+                        <span className="text-2xl sm:text-3xl bg-green-100 p-2 rounded-2xl">👩‍🍳</span> Instructions
                      </label>
-                     <p className="text-sm text-green-600 font-bold bg-green-50 px-4 py-2 rounded-full border-2 border-green-100">Tap mic to speak!</p>
+                     <p className="text-xs sm:text-sm text-green-600 font-bold bg-green-50 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border-2 border-green-100 self-start sm:self-auto">Tap mic to speak!</p>
                   </div>
                   
                   <div className="relative">
                     <textarea 
-                      value={instructions}
-                      onChange={(e) => setInstructions(e.target.value)}
-                      placeholder="1. Heat the ghee..."
-                      className="w-full h-64 p-6 pb-24 bg-orange-50/50 border-4 border-orange-100 rounded-[2rem] focus:border-orange-400 focus:bg-white outline-none resize-none transition-all placeholder-orange-300 text-orange-900 font-medium text-xl leading-relaxed shadow-inner"
+                      value={displayInstructions} 
+                      onChange={(e) => setInstructions(e.target.value)} 
+                      placeholder="1. Heat the ghee..." 
+                      className="w-full h-48 sm:h-64 p-5 sm:p-6 pb-20 sm:pb-24 bg-orange-50/50 border-4 border-orange-100 rounded-[1.5rem] sm:rounded-[2rem] outline-none text-orange-900 font-medium text-lg sm:text-xl resize-none shadow-inner" 
                     />
+                    
                     {interimText && (
-                      <div className="absolute bottom-24 left-6 right-24 bg-green-100/90 backdrop-blur-sm p-4 rounded-2xl border-2 border-green-200 shadow-lg">
-                         <p className="text-base text-green-800 font-bold animate-pulse">
+                      <div className="absolute bottom-20 sm:bottom-24 left-4 right-20 sm:left-6 sm:right-24 bg-green-100/90 backdrop-blur-sm p-3 sm:p-4 rounded-2xl border-2 border-green-200 shadow-lg">
+                         <p className="text-sm sm:text-base text-green-800 font-bold animate-pulse">
                           Listening: <span className="font-medium italic">{interimText}...</span>
                          </p>
                       </div>
                     )}
                     
-                    <button 
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleRecording();
-                      }}
-                      className={`absolute bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl text-white transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center border-4 border-white ${
-                        isRecording ? 'bg-red-500 animate-bounce shadow-red-500/50' : user.btnTheme
-                      }`}
-                      title={isRecording ? "Stop Recording" : "Record Instructions"}
-                    >
+                    <button type="button" onClick={(e) => { e.preventDefault(); toggleRecording(); }} className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-2xl text-white flex items-center justify-center border-4 border-white ${isRecording ? 'bg-red-500 animate-bounce' : user.btnTheme}`} title={isRecording ? "Stop Recording" : "Record Instructions"}>
                       {isRecording ? <Icons.Stop /> : <Icons.Mic />}
                     </button>
                   </div>
-                  {speechError && <p className="text-base font-bold text-red-600 mt-4 bg-red-50 p-4 rounded-2xl border-2 border-red-200">{speechError}</p>}
                 </div>
 
-                {/* Media Upload */}
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
+                <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border-4 border-orange-50 relative overflow-hidden">
                    <div className={`absolute top-0 left-0 w-full h-2 ${user.theme}`}></div>
-                   <label className="block text-xl font-black text-orange-900 mb-6 flex items-center gap-3">
-                    <span className="text-3xl bg-blue-100 p-2 rounded-2xl">📸</span> Photos & Videos
-                  </label>
-                  <div className="flex flex-wrap gap-4">
+                   <label className="block text-lg sm:text-xl font-black text-orange-900 mb-6 flex items-center gap-3"><span className="text-2xl sm:text-3xl bg-blue-100 p-2 rounded-2xl">📸</span> Photos & Videos</label>
+                  <div className="flex flex-wrap gap-3 sm:gap-4">
                     {media.map((url, idx) => (
-                      <div key={idx} className="relative w-32 h-32 rounded-[1.5rem] overflow-hidden shadow-lg border-4 border-white">
-                        <img src={url} alt={`Media ${idx}`} className="w-full h-full object-cover" />
-                        <button 
-                          onClick={() => setMedia(media.filter((_, i) => i !== idx))}
-                          className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white rounded-full p-2 hover:bg-red-500 transition-colors"
-                        >
-                          <Icons.Trash />
-                        </button>
+                      <div key={idx} className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-[1.25rem] sm:rounded-[1.5rem] overflow-hidden shadow-lg border-4 border-white">
+                        <img src={url} className="w-full h-full object-cover" />
+                        <button onClick={() => {
+                          setMedia(media.filter((_, i) => i !== idx));
+                          setRawFiles(rawFiles.filter((_, i) => i !== idx));
+                        }} className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-black/60 text-white rounded-full p-1.5 sm:p-2"><Icons.Trash /></button>
                       </div>
                     ))}
-                    <label className={`w-32 h-32 flex flex-col items-center justify-center border-4 border-dashed border-orange-300 rounded-[1.5rem] cursor-pointer hover:bg-orange-100 hover:border-orange-400 text-orange-600 transition-all bg-orange-50/50 shadow-inner`}>
+                    <label className="w-24 h-24 sm:w-32 sm:h-32 flex flex-col items-center justify-center border-4 border-dashed border-orange-300 rounded-[1.25rem] sm:rounded-[1.5rem] cursor-pointer bg-orange-50/50 text-orange-600 hover:bg-orange-100">
                       <Icons.Camera />
-                      <span className="text-sm mt-3 font-black uppercase tracking-wider">Add</span>
+                      <span className="text-xs sm:text-sm mt-2 font-black uppercase">Add</span>
                       <input type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleImageUpload} />
                     </label>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                  <button 
-                    onClick={() => handleSubmit('draft')}
-                    className="flex-1 py-5 bg-white text-orange-800 border-4 border-orange-200 font-black text-xl rounded-full hover:bg-orange-50 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg"
-                  >
-                    Save as Draft
-                  </button>
-                  <button 
-                    onClick={() => handleSubmit('published')}
-                    className={`flex-1 py-5 text-white font-black text-xl rounded-full shadow-2xl transition-all transform hover:scale-[1.02] active:scale-95 border-4 border-white ${user.btnTheme}`}
-                  >
-                    Publish Recipe!
-                  </button>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
+                  <button disabled={isUploading} onClick={() => handleSubmit('draft')} className="flex-1 py-4 sm:py-5 bg-white text-orange-800 border-4 border-dashed border-orange-400 font-black text-lg sm:text-xl rounded-full shadow-lg disabled:opacity-50">Save as Draft</button>
+                  <button disabled={isUploading} onClick={() => handleSubmit('published')} className={`flex-1 py-4 sm:py-5 text-white font-black text-lg sm:text-xl rounded-full border-4 border-dashed border-white shadow-2xl disabled:opacity-50 ${user.btnTheme}`}>{isUploading ? 'Uploading & Saving...' : 'Publish Recipe!'}</button>
                 </div>
               </div>
             </div>
@@ -452,73 +390,54 @@
         };
 
         const RecipeView = ({ recipe, user, onBack, onEdit, onDelete, showToast }) => {
+          const handleDownload = () => {
+            const content = `YUMMY TUMMY RECIPE: ${recipe.title.toUpperCase()}\nBy: ${USERS[recipe.authorId]?.name || 'Unknown'}\n\n--- INGREDIENTS ---\n${recipe.ingredients.map(ing => `• ${ing.amount} -${ing.name}`).join('\n')}\n\n--- INSTRUCTIONS ---\n${recipe.instructions || 'No instructions added.'}`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `${recipe.title.replace(/\s+/g, '_')}_Recipe.txt`; a.click();
+            URL.revokeObjectURL(url);
+            showToast("Recipe downloaded successfully!");
+          };
+
+          const handleShare = async () => {
+            if (navigator.share) {
+              try { await navigator.share({ title: recipe.title, text: `Check out this delicious ${recipe.title} recipe!`, url: window.location.href }); } catch (error) {}
+            } else { showToast("Sharing not supported on this device."); }
+          };
+
           return (
             <div className="max-w-2xl mx-auto pb-24 animate-fade-in">
-              <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border-8 border-white">
-                <div className="h-72 bg-orange-100 relative">
-                  {recipe.media && recipe.media.length > 0 ? (
-                    <img src={recipe.media[0]} className="w-full h-full object-cover" alt={recipe.title} />
-                  ) : (
-                    <div className={`w-full h-full flex items-center justify-center ${user.lightTheme}`}>
-                      <span className="text-6xl">🍲</span>
-                    </div>
-                  )}
-                  <button onClick={onBack} className="absolute top-6 left-6 p-4 bg-white/90 backdrop-blur-md rounded-full shadow-xl text-gray-800 hover:bg-white transition-all transform hover:scale-105">
-                    <Icons.Back />
-                  </button>
-                  
-                  <div className="absolute top-6 right-6 flex gap-3">
-                    <button onClick={() => onDelete(recipe.id)} className="p-4 bg-white/90 backdrop-blur-md rounded-full shadow-xl text-red-500 hover:bg-white transition-all transform hover:scale-105 flex items-center gap-2 font-bold" title="Delete Recipe">
-                      <Icons.Trash />
-                    </button>
-                    <button onClick={onEdit} className="p-4 bg-white/90 backdrop-blur-md rounded-full shadow-xl text-orange-600 hover:bg-white transition-all transform hover:scale-105 flex items-center gap-2 font-bold">
-                      <Icons.Edit /> Edit
-                    </button>
+              <div className="bg-white rounded-[2rem] sm:rounded-[3rem] shadow-2xl overflow-hidden border-8 border-white">
+                <div className="h-56 sm:h-72 bg-orange-100 relative">
+                  {recipe.media && recipe.media.length > 0 ? <img src={recipe.media[0]} className="w-full h-full object-cover" /> : <div className={`w-full h-full flex items-center justify-center ${user.lightTheme}`}><span className="text-5xl sm:text-6xl">🍲</span></div>}
+                  <button onClick={onBack} className="absolute top-4 left-4 p-3 bg-white/90 rounded-full shadow-xl"><Icons.Back /></button>
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <button onClick={() => onDelete(recipe.id)} className="p-3 bg-white/90 rounded-full text-red-500 shadow-xl"><Icons.Trash /></button>
+                    <button onClick={onEdit} className="p-3 bg-white/90 rounded-full text-orange-600 shadow-xl flex items-center gap-2 font-bold"><Icons.Edit /> <span className="hidden sm:inline">Edit</span></button>
                   </div>
                 </div>
 
-                <div className="p-8 md:p-10 relative">
-                  <div className={`absolute -top-10 right-10 w-20 h-20 bg-white rounded-full p-2 shadow-xl`}>
-                     <img src={USERS[recipe.authorId].image} alt="Author" className="w-full h-full rounded-full object-cover" />
+                <div className="p-6 sm:p-10 relative">
+                  <div className={`absolute -top-12 right-6 w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full p-1.5 shadow-xl`}>
+                     <img src={USERS[recipe.authorId]?.image || MAIN_IMAGE} className="w-full h-full rounded-full object-cover" />
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-black text-orange-900 mb-6 sm:mb-8 pr-16">{recipe.title}</h2>
+
+                  <div className="flex flex-col sm:flex-row gap-3 mb-8">
+                    <button onClick={handleDownload} className="flex-1 py-3 bg-orange-100 text-orange-800 font-bold rounded-xl flex items-center justify-center gap-2 border-2 border-orange-200"><Icons.Download /> Download Text</button>
+                    <button onClick={handleShare} className="flex-1 py-3 bg-green-100 text-green-800 font-bold rounded-xl flex items-center justify-center gap-2 border-2 border-green-200"><Icons.Share /> Share Recipe</button>
                   </div>
 
-                  <h2 className="text-4xl font-black text-orange-900 mb-8 pr-20 leading-tight">{recipe.title}</h2>
-
-                  <div className="mb-10">
-                    <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3">
-                       <span className="text-3xl bg-orange-100 p-2 rounded-2xl">🌶️</span> Ingredients
-                    </h3>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-orange-50 p-6 rounded-[2rem] border-4 border-orange-100/50">
-                      {recipe.ingredients.map(ing => (
-                        <li key={ing.id} className="flex items-center gap-4 text-orange-900 p-3 bg-white rounded-2xl shadow-sm border-2 border-orange-50">
-                          <span className={`w-4 h-4 rounded-full shadow-inner ${user.theme}`}></span>
-                          <div>
-                            <span className="font-black text-lg block leading-none mb-1">{ing.amount}</span> 
-                            <span className="font-medium text-base text-gray-600">{ing.name}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="mb-10">
-                    <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3">
-                        <span className="text-3xl bg-green-100 p-2 rounded-2xl">👩‍🍳</span> Instructions
-                    </h3>
-                    <div className="text-orange-900 whitespace-pre-wrap leading-relaxed text-xl font-medium bg-orange-50/50 p-8 rounded-[2rem] border-4 border-orange-100/50 shadow-inner">
-                      {recipe.instructions || <span className="italic text-orange-400">No instructions added.</span>}
-                    </div>
+                  <div className="mb-8">
+                    <h3 className="text-xl sm:text-2xl font-black text-orange-900 mb-4 flex items-center gap-3"><span className="text-2xl bg-green-100 p-2 rounded-2xl">👩‍🍳</span> Instructions</h3>
+                    <div className="text-orange-900 whitespace-pre-wrap text-lg font-medium bg-orange-50/50 p-6 rounded-[1.5rem] border-4 border-orange-100/50">{recipe.instructions || <span className="italic text-orange-400">No instructions added.</span>}</div>
                   </div>
 
                   {recipe.media && recipe.media.length > 1 && (
                     <div>
-                      <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3">
-                          <span className="text-3xl bg-blue-100 p-2 rounded-2xl">📸</span> Gallery
-                      </h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        {recipe.media.slice(1).map((url, idx) => (
-                          <img key={idx} src={url} alt="Gallery" className="w-full h-48 object-cover rounded-[2rem] shadow-lg border-4 border-orange-50 hover:scale-[1.02] transition-transform" />
-                        ))}
+                      <h3 className="text-xl sm:text-2xl font-black text-orange-900 mb-4 flex items-center gap-3"><span className="text-2xl bg-blue-100 p-2 rounded-2xl">📸</span> Gallery</h3>
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                        {recipe.media.slice(1).map((url, idx) => <img key={idx} src={url} className="w-full h-32 sm:h-48 object-cover rounded-[1.5rem] shadow-lg border-4 border-orange-50" />)}
                       </div>
                     </div>
                   )}
@@ -534,93 +453,42 @@
           const published = userRecipes.filter(r => r.status === 'published');
 
           const RecipeCard = ({ recipe }) => (
-            <div 
-              onClick={() => onViewRecipe(recipe)}
-              className="bg-white p-5 rounded-[2rem] shadow-lg border-4 border-orange-50 flex items-center gap-5 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all group"
-            >
-              <div className={`w-20 h-20 rounded-[1.5rem] flex-shrink-0 flex items-center justify-center overflow-hidden shadow-inner border-2 border-orange-100 ${user.lightTheme}`}>
-                {recipe.media && recipe.media.length > 0 ? (
-                  <img src={recipe.media[0]} className="w-full h-full object-cover" alt="thumb" />
-                ) : (
-                  <span className="text-3xl">🍲</span>
-                )}
+            <div onClick={() => onViewRecipe(recipe)} className="bg-white p-4 sm:p-5 rounded-[1.5rem] shadow-lg border-4 border-orange-50 flex items-center gap-4 cursor-pointer hover:-translate-y-1 transition-all group">
+              <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-[1.25rem] flex-shrink-0 flex items-center justify-center overflow-hidden border-2 border-orange-100 ${user.lightTheme}`}>
+                {recipe.media && recipe.media.length > 0 ? <img src={recipe.media[0]} className="w-full h-full object-cover" /> : <span className="text-2xl">🍲</span>}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-black text-orange-900 truncate text-xl mb-1">{recipe.title || 'Untitled Recipe'}</h4>
-                <p className="text-base font-bold text-orange-500 bg-orange-50 inline-block px-3 py-1 rounded-full">{recipe.ingredients.length} ingredients</p>
+                <h4 className="font-black text-orange-900 truncate text-lg sm:text-xl">{recipe.title || 'Untitled'}</h4>
+                <p className="text-sm font-bold text-orange-500 bg-orange-50 inline-block px-2 py-0.5 rounded-full">{recipe.ingredients.length} items</p>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onDeleteRecipe(recipe.id); }}
-                  className="p-3 bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors shadow-sm"
-                  title="Delete Recipe"
-                >
-                  <Icons.Trash />
-                </button>
-                <div className={`text-orange-300 group-hover:${user.accent} transition-colors p-2 bg-orange-50 rounded-full group-hover:bg-orange-100`}>
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path></svg>
-                </div>
+              <div className="flex items-center gap-2">
+                <button onClick={(e) => { e.stopPropagation(); onDeleteRecipe(recipe.id); }} className="p-2 bg-red-50 text-red-400 rounded-full hover:bg-red-100"><Icons.Trash /></button>
               </div>
             </div>
           );
 
           return (
             <div className="max-w-2xl mx-auto pb-24 animate-fade-in">
-              <div className="flex justify-between items-center mb-12 bg-white/90 backdrop-blur-xl p-6 rounded-[3rem] shadow-xl border-4 border-white">
-                <div className="flex items-center gap-5">
-                  <div className="relative">
-                     <img 
-                       src={user.image} 
-                       alt={user.name} 
-                       className={`w-20 h-20 rounded-full border-4 ${user.borderTheme} object-cover shadow-lg`} 
-                     />
-                     <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-4 border-white ${user.theme}`}></div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-orange-500 font-black uppercase tracking-widest mb-1">Welcome</p>
-                    <h2 className="text-3xl font-black text-orange-900">{user.name}</h2>
-                  </div>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 sm:mb-12 bg-white/90 p-5 sm:p-6 rounded-[2rem] shadow-xl border-4 border-white">
+                <div className="flex items-center gap-3 sm:gap-5">
+                  <img src={user.image} className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 ${user.borderTheme} object-cover`} />
+                  <div><h2 className="text-2xl sm:text-3xl font-black text-orange-900">{user.name}</h2></div>
                 </div>
-                <button onClick={onLogout} className="text-sm font-black text-orange-700 hover:text-orange-900 px-5 py-3 bg-orange-100 rounded-full transition-colors shadow-sm hover:bg-orange-200">Switch User</button>
+                <button onClick={onLogout} className="text-sm font-black text-orange-700 bg-orange-100 px-4 py-2 rounded-full hover:bg-orange-200">Switch User</button>
               </div>
 
-              <button 
-                onClick={onNew}
-                className={`w-full py-8 rounded-[3rem] text-white font-black text-2xl shadow-2xl flex justify-center items-center gap-3 transition-all transform hover:scale-[1.02] active:scale-95 mb-12 border-8 border-white ${user.btnTheme}`}
-              >
-                <div className="bg-white/30 p-3 rounded-full shadow-inner"><Icons.Plus /></div> Add New Recipe
+              <button onClick={onNew} className={`w-full py-6 sm:py-8 rounded-[2rem] sm:rounded-[3rem] text-white font-black text-xl sm:text-2xl shadow-2xl flex justify-center items-center gap-3 mb-8 border-8 border-white ${user.btnTheme}`}>
+                <div className="bg-white/30 p-2 sm:p-3 rounded-full"><Icons.Plus /></div> Add New Recipe
               </button>
 
-              <div className="space-y-12">
+              <div className="space-y-8">
                 <div>
-                  <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3 pl-2">
-                    My Recipes <span className={`text-white text-base px-4 py-1 rounded-full shadow-sm ${user.theme}`}>{published.length}</span>
-                  </h3>
-                  <div className="space-y-4">
-                    {published.length === 0 ? (
-                      <div className="p-8 bg-white rounded-[2rem] border-4 border-dashed border-orange-200 text-center shadow-sm">
-                        <p className="text-xl text-orange-400 font-bold">You haven't published any recipes yet.</p>
-                      </div>
-                    ) : (
-                      published.map(r => <RecipeCard key={r.id} recipe={r} />)
-                    )}
-                  </div>
+                  <h3 className="text-xl font-black text-orange-900 mb-4 pl-2">My Recipes</h3>
+                  <div className="space-y-3">{published.map(r => <RecipeCard key={r.id} recipe={r} />)}</div>
                 </div>
-
                 <div>
-                  <h3 className="text-2xl font-black text-orange-900 mb-6 flex items-center gap-3 pl-2 opacity-80">
-                    Drafts <span className="bg-orange-200 text-orange-800 text-base px-4 py-1 rounded-full shadow-sm">{drafts.length}</span>
-                  </h3>
-                  <div className="space-y-4">
-                    {drafts.length === 0 ? (
-                      <div className="p-8 bg-orange-50/50 rounded-[2rem] border-4 border-dashed border-orange-100 text-center">
-                        <p className="text-lg text-orange-300 font-bold">No drafts saved.</p>
-                      </div>
-                    ) : (
-                      drafts.map(r => <RecipeCard key={r.id} recipe={r} />)
-                    )}
-                  </div>
+                  <h3 className="text-xl font-black text-orange-900 mb-4 pl-2 opacity-80">Drafts</h3>
+                  <div className="space-y-3">{drafts.map(r => <RecipeCard key={r.id} recipe={r} />)}</div>
                 </div>
               </div>
             </div>
@@ -628,73 +496,64 @@
         };
 
         const WelcomeScreen = ({ onSelectUser }) => (
-          <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+          <div className="min-h-screen flex flex-col items-center justify-center p-3 sm:p-8 relative overflow-hidden">
             
-            <div className="w-full max-w-5xl relative bg-white/80 backdrop-blur-xl border-[12px] border-dashed border-orange-400 rounded-[4rem] p-8 sm:p-12 shadow-2xl flex flex-col items-center mt-10">
+            <div className="w-full max-w-5xl relative bg-white/80 border-8 sm:border-[12px] border-dashed border-orange-400 rounded-[2rem] sm:rounded-[4rem] p-6 sm:p-12 shadow-2xl flex flex-col items-center mt-6">
               
-              <div className="absolute -top-10 -left-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '3s'}}>🍅</div>
-              <div className="absolute -top-10 -right-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '4s'}}>🌿</div>
-              <div className="absolute -bottom-10 -left-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '3.5s'}}>🌶️</div>
-              <div className="absolute -bottom-10 -right-10 text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '4.5s'}}>🍋</div>
-              <div className="absolute top-1/2 -left-12 text-7xl transform -translate-y-1/2 drop-shadow-lg">🧅</div>
-              <div className="absolute top-1/2 -right-12 text-7xl transform -translate-y-1/2 drop-shadow-lg">🧄</div>
+              <div className="absolute -top-6 -left-6 sm:-top-10 sm:-left-10 text-5xl sm:text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '3s'}}>🍅</div>
+              <div className="absolute -top-6 -right-6 sm:-top-10 sm:-right-10 text-5xl sm:text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '4s'}}>🌿</div>
+              <div className="absolute -bottom-6 -left-6 sm:-bottom-10 sm:-left-10 text-5xl sm:text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '3.5s'}}>🌶️</div>
+              <div className="absolute -bottom-6 -right-6 sm:-bottom-10 sm:-right-10 text-5xl sm:text-7xl animate-bounce drop-shadow-lg" style={{animationDuration: '4.5s'}}>🍋</div>
+              <div className="absolute top-1/2 -left-8 sm:-left-12 text-5xl sm:text-7xl transform -translate-y-1/2 drop-shadow-lg">🧅</div>
+              <div className="absolute top-1/2 -right-8 sm:-right-12 text-5xl sm:text-7xl transform -translate-y-1/2 drop-shadow-lg">🧄</div>
               
-              <div className="text-center mb-8">
-                <h1 className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-pink-600 mb-4 drop-shadow-sm">
-                  Yummy Tummy
-                </h1>
-                <p className="text-2xl text-orange-800 font-black bg-orange-100 inline-block px-8 py-3 rounded-full shadow-inner border-4 border-orange-200">
-                  I am hungry! What are you making today?
-                </p>
+              <div className="text-center mb-6">
+                <h1 className="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-pink-600 mb-3 leading-tight pb-2">Yummy Tummy</h1>
+                <p className="text-lg sm:text-2xl text-orange-800 font-black bg-orange-100 inline-block px-5 sm:px-8 py-2 rounded-full border-4 border-orange-200">I am hungry! What are you making today?</p>
               </div>
 
-              <div className="w-full max-w-4xl h-64 md:h-[400px] rounded-[3rem] overflow-hidden border-8 border-white shadow-2xl mb-12 relative group bg-orange-200">
-                <img 
-                  src={MAIN_IMAGE} 
-                  alt="Kitchen Illustration" 
-                  className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-orange-900/40 to-transparent pointer-events-none"></div>
-              </div>
+              <div className="w-full max-w-4xl h-48 sm:h-[400px] rounded-[2rem] overflow-hidden border-4 sm:border-8 border-white shadow-2xl mb-8 relative"><img src={MAIN_IMAGE} className="w-full h-full object-cover" /></div>
               
-              <div className="flex flex-col sm:flex-row gap-8 w-full max-w-3xl">
-                <button 
-                  onClick={() => onSelectUser(USERS.bedani)}
-                  className="flex-1 bg-gradient-to-b from-blue-100 to-blue-200 p-8 rounded-[3rem] shadow-[0_20px_50px_rgba(59,130,246,0.4)] border-8 border-white hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-3 hover:scale-105 group flex flex-col items-center relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-                  <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-                  
-                  <div className="w-40 h-40 rounded-full mb-6 overflow-hidden border-8 border-white shadow-2xl relative z-10">
-                     <img 
-                       src={USERS.bedani.image} 
-                       alt="Bedani Mom" 
-                       className="w-full h-full object-cover object-top" 
-                     />
-                  </div>
-                  <h2 className="text-3xl font-black text-blue-900 relative z-10 bg-white/90 px-6 py-2 rounded-full border-4 border-blue-200 shadow-sm">Bedani Mom</h2>
+              <div className="flex flex-col md:flex-row gap-5 w-full max-w-5xl">
+                <button onClick={() => onSelectUser(USERS.bedani)} className="flex-1 bg-gradient-to-b from-blue-100 to-blue-200 p-6 sm:p-8 rounded-[2rem] border-4 sm:border-8 border-white shadow-xl flex flex-col items-center hover:-translate-y-2 transition-transform">
+                  <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full mb-4 overflow-hidden border-4 border-white shadow-2xl"><img src={USERS.bedani.image} className="w-full h-full object-cover object-top" /></div>
+                  <h2 className="text-xl sm:text-2xl font-black text-blue-900 bg-white/90 px-4 py-1.5 rounded-full border-2 border-blue-200">Bedani Mom</h2>
                 </button>
-
-                <button 
-                  onClick={() => onSelectUser(USERS.varanasi)}
-                  className="flex-1 bg-gradient-to-b from-pink-100 to-pink-200 p-8 rounded-[3rem] shadow-[0_20px_50px_rgba(236,72,153,0.4)] border-8 border-white hover:border-pink-400 transition-all duration-300 transform hover:-translate-y-3 hover:scale-105 group flex flex-col items-center relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-                  <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-
-                  <div className="w-40 h-40 rounded-full mb-6 overflow-hidden border-8 border-white shadow-2xl relative z-10">
-                     <img 
-                       src={USERS.varanasi.image} 
-                       alt="Varanasi Mom" 
-                       className="w-full h-full object-cover object-top" 
-                     />
-                  </div>
-                  <h2 className="text-3xl font-black text-pink-900 relative z-10 bg-white/90 px-6 py-2 rounded-full border-4 border-pink-200 shadow-sm">Varanasi Mom</h2>
+                <button onClick={() => onSelectUser(USERS.varanasi)} className="flex-1 bg-gradient-to-b from-pink-100 to-pink-200 p-6 sm:p-8 rounded-[2rem] border-4 sm:border-8 border-white shadow-xl flex flex-col items-center hover:-translate-y-2 transition-transform">
+                  <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full mb-4 overflow-hidden border-4 border-white shadow-2xl"><img src={USERS.varanasi.image} className="w-full h-full object-cover object-top" /></div>
+                  <h2 className="text-xl sm:text-2xl font-black text-pink-900 bg-white/90 px-4 py-1.5 rounded-full border-2 border-pink-200">Varanasi Mom</h2>
+                </button>
+                <button onClick={() => onSelectUser(USERS.family)} className="flex-1 bg-gradient-to-b from-teal-100 to-teal-200 p-6 sm:p-8 rounded-[2rem] border-4 sm:border-8 border-white shadow-xl flex flex-col items-center hover:-translate-y-2 transition-transform">
+                  <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full mb-4 overflow-hidden border-4 border-white shadow-2xl bg-white"><img src={USERS.family.image} className="w-full h-full object-cover object-center" /></div>
+                  <h2 className="text-lg sm:text-xl font-black text-teal-900 bg-white/90 px-3 py-1.5 rounded-full border-2 border-teal-200">Family/Friend Chef</h2>
                 </button>
               </div>
             </div>
           </div>
         );
+
+        // Crash Catcher - If anything goes wrong, this shows a red box instead of a blank screen
+        class ErrorBoundary extends React.Component {
+          constructor(props) {
+            super(props);
+            this.state = { hasError: false, error: null };
+          }
+          static getDerivedStateFromError(error) {
+            return { hasError: true, error };
+          }
+          render() {
+            if (this.state.hasError) {
+              return (
+                <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+                  <h1 style={{ color: 'red' }}>App Initialization Error</h1>
+                  <p>Something went wrong loading the database.</p>
+                  <pre style={{ background: '#eee', padding: '10px' }}>{this.state.error && this.state.error.toString()}</pre>
+                </div>
+              );
+            }
+            return this.props.children;
+          }
+        }
 
         function App() {
           const [currentUser, setCurrentUser] = useState(null);
@@ -705,119 +564,109 @@
           const [toastMessage, setToastMessage] = useState('');
 
           useEffect(() => {
-            if (toastMessage) {
-              const timer = setTimeout(() => setToastMessage(''), 3000);
-              return () => clearTimeout(timer);
-            }
-          }, [toastMessage]);
+            let unsubscribe = null;
+            let isMounted = true;
+
+            const setupDatabase = async () => {
+              // Wait for the Module Loader to finish downloading Firebase
+              while (!window.Firebase) {
+                await new Promise(r => setTimeout(r, 100));
+              }
+
+              try {
+                let app;
+                if (!window.Firebase.getApps().length) {
+                    app = window.Firebase.initializeApp(firebaseConfig);
+                } else {
+                    app = window.Firebase.getApp();
+                }
+                
+                const db = window.Firebase.getFirestore(app);
+                const auth = window.Firebase.getAuth(app);
+                const storage = window.Firebase.getStorage(app);
+
+                window.db = db;
+                window.auth = auth;
+                window.storage = storage;
+
+                await window.Firebase.signInAnonymously(auth);
+
+                if (!isMounted) return;
+
+                const recipesCollection = window.Firebase.collection(db, 'artifacts', dbAppId, 'public', 'data', 'recipes');
+                
+                unsubscribe = window.Firebase.onSnapshot(recipesCollection, (snapshot) => {
+                  const fetchedRecipes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                  if (isMounted) setRecipes(fetchedRecipes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)));
+                });
+
+              } catch (err) {
+                console.error("Firebase init failed:", err);
+                showToast("Connection failed. Check Firebase Anonymous Login.");
+              }
+            };
+
+            setupDatabase();
+
+            return () => {
+              isMounted = false;
+              if (unsubscribe) unsubscribe();
+            };
+          }, []);
+
+          useEffect(() => { if (toastMessage) { const t = setTimeout(() => setToastMessage(''), 3000); return () => clearTimeout(t); } }, [toastMessage]);
 
           const showToast = (msg) => setToastMessage(msg);
 
-          const handleSaveRecipe = (recipeData) => {
-            setRecipes(prev => {
-              const exists = prev.findIndex(r => r.id === recipeData.id);
-              if (exists >= 0) {
-                const newRecipes = [...prev];
-                newRecipes[exists] = recipeData;
-                return newRecipes;
-              }
-              return [recipeData, ...prev];
-            });
+          const handleSaveRecipe = async (recipeData) => {
             setEditingRecipe(null);
             setCurrentView('dashboard');
-            showToast(`Recipe ${recipeData.status === 'published' ? 'published' : 'saved as draft'}!`);
+            showToast(`Recipe ${recipeData.status === 'published' ? 'published' : 'saved as draft'} to Cloud!`);
           };
 
-          const handleDeleteRecipe = (recipeId) => {
-            setRecipes(prev => prev.filter(r => r.id !== recipeId));
-            setCurrentView('dashboard');
-            setViewingRecipe(null);
-            showToast('Recipe deleted successfully!');
+          const handleDeleteRecipe = async (recipeId) => {
+            try {
+              const docRef = window.Firebase.doc(window.db, 'artifacts', dbAppId, 'public', 'data', 'recipes', recipeId);
+              await window.Firebase.deleteDoc(docRef);
+              setCurrentView('dashboard');
+              setViewingRecipe(null);
+              showToast('Recipe deleted from Cloud!');
+            } catch (e) { showToast("Error deleting recipe."); }
           };
-
-          const backgroundTheme = currentView === 'welcome' ? 'bg-[#fff7ed]' : 'bg-[#fff7ed]';
 
           return (
-            <div className={`min-h-screen font-sans transition-colors duration-500 ${backgroundTheme}`}>
+            <div className="min-h-screen bg-[#fff7ed]">
               <style dangerouslySetInnerHTML={{__html: `
                 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-                body { 
-                  font-family: 'Nunito', sans-serif; 
-                  background-color: #fff7ed; 
-                  background-image: radial-gradient(#fdba74 3px, transparent 3px);
-                  background-size: 40px 40px;
-                }
-                .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-                .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-                @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-                @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-                @keyframes blob {
-                  0% { transform: translate(0px, 0px) scale(1); }
-                  33% { transform: translate(30px, -50px) scale(1.1); }
-                  66% { transform: translate(-20px, 20px) scale(0.9); }
-                  100% { transform: translate(0px, 0px) scale(1); }
-                }
+                body { font-family: 'Nunito', sans-serif; background-color: #fff7ed; background-image: radial-gradient(#fdba74 3px, transparent 3px); background-size: 40px 40px; }
+                @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
                 .animate-blob { animation: blob 7s infinite; }
                 .animation-delay-2000 { animation-delay: 2s; }
+                @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+                .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
               `}} />
-
-              {currentView === 'welcome' && (
-                <WelcomeScreen onSelectUser={(user) => {
-                  setCurrentUser(user);
-                  setCurrentView('dashboard');
-                }} />
-              )}
-
+              {currentView === 'welcome' && <WelcomeScreen onSelectUser={(user) => { setCurrentUser(user); setCurrentView('dashboard'); }} />}
               {currentView !== 'welcome' && (
-                <div className="p-4 md:p-8 pt-8 relative max-w-4xl mx-auto mt-4 md:mt-10 mb-10">
-                   <div className="absolute inset-0 bg-white/80 backdrop-blur-2xl border-[12px] border-dashed border-orange-400 rounded-[4rem] shadow-2xl -z-10"></div>
+                <div className="p-2 sm:p-4 md:p-8 pt-6 sm:pt-8 relative max-w-4xl mx-auto mt-2 sm:mt-4 md:mt-10 mb-6 sm:mb-10">
+                   <div className="absolute inset-0 bg-white/80 border-4 sm:border-[12px] border-dashed border-orange-400 rounded-[2rem] sm:rounded-[4rem] shadow-2xl -z-10"></div>
                    
-                   <div className="absolute -top-8 -left-8 text-6xl animate-bounce hidden sm:block drop-shadow-md" style={{animationDuration: '3.2s'}}>🥕</div>
-                   <div className="absolute -top-8 -right-8 text-6xl animate-bounce hidden sm:block drop-shadow-md" style={{animationDuration: '4.1s'}}>🍋</div>
-                   
+                   <div className="absolute -top-4 -left-4 sm:-top-8 sm:-left-8 text-4xl sm:text-6xl animate-bounce drop-shadow-md" style={{animationDuration: '3.2s'}}>🥕</div>
+                   <div className="absolute -top-4 -right-4 sm:-top-8 sm:-right-8 text-4xl sm:text-6xl animate-bounce drop-shadow-md" style={{animationDuration: '4.1s'}}>🍋</div>
+
                    <div className="relative z-10 p-2 sm:p-6">
-                    {currentView === 'dashboard' && (
-                      <Dashboard 
-                        user={currentUser} 
-                        recipes={recipes} 
-                        onNew={() => { setEditingRecipe(null); setCurrentView('form'); }}
-                        onViewRecipe={(r) => { setViewingRecipe(r); setCurrentView('view'); }}
-                        onLogout={() => { setCurrentUser(null); setCurrentView('welcome'); }}
-                        onDeleteRecipe={handleDeleteRecipe}
-                      />
-                    )}
-
-                    {currentView === 'form' && (
-                      <RecipeForm 
-                        user={currentUser}
-                        initialData={editingRecipe}
-                        onSave={handleSaveRecipe}
-                        onCancel={() => setCurrentView(editingRecipe ? 'view' : 'dashboard')}
-                        showToast={showToast}
-                      />
-                    )}
-
-                    {currentView === 'view' && viewingRecipe && (
-                      <RecipeView 
-                        recipe={viewingRecipe}
-                        user={currentUser}
-                        onBack={() => setCurrentView('dashboard')}
-                        onEdit={() => { setEditingRecipe(viewingRecipe); setCurrentView('form'); }}
-                        onDelete={handleDeleteRecipe}
-                        showToast={showToast}
-                      />
-                    )}
+                    {currentView === 'dashboard' && <Dashboard user={currentUser} recipes={recipes} onNew={() => { setEditingRecipe(null); setCurrentView('form'); }} onViewRecipe={(r) => { setViewingRecipe(r); setCurrentView('view'); }} onLogout={() => { setCurrentUser(null); setCurrentView('welcome'); }} onDeleteRecipe={handleDeleteRecipe} />}
+                    {currentView === 'form' && <RecipeForm user={currentUser} initialData={editingRecipe} onSave={handleSaveRecipe} onCancel={() => setCurrentView(editingRecipe ? 'view' : 'dashboard')} showToast={showToast} />}
+                    {currentView === 'view' && viewingRecipe && <RecipeView recipe={viewingRecipe} user={currentUser} onBack={() => setCurrentView('dashboard')} onEdit={() => { setEditingRecipe(viewingRecipe); setCurrentView('form'); }} onDelete={handleDeleteRecipe} showToast={showToast} />}
                   </div>
                 </div>
               )}
-
               <Toast message={toastMessage} onClose={() => setToastMessage('')} />
             </div>
           );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
     </script>
 </body>
 </html>
